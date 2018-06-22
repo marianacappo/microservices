@@ -1,0 +1,5 @@
+com\microservices\clientgreeting\dtos\ImageDto.class
+com\microservices\clientgreeting\dtos\GreetingDto.class
+com\microservices\clientgreeting\service\ClientGreetingService.class
+com\microservices\clientgreeting\ClientGreetingServer.class
+com\microservices\clientgreeting\controller\ClientGreetingController.class

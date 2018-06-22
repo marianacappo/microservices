@@ -1,0 +1,3 @@
+com\microservices\greeting\model\Greeting.class
+com\microservices\greeting\controller\GreetingController.class
+com\microservices\greeting\GreetingServer.class
