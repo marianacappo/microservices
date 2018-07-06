@@ -9,6 +9,7 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import com.microservices.auth.domain.User;
@@ -18,6 +19,9 @@ import com.microservices.auth.repositories.UserRepository;
 public class UserService implements UserDetailsService {
 
 	private String ROLE_ADMIN = "ROLE_ADMIN";
+	
+	@Autowired
+    private PasswordEncoder passwordEncoder;
 	
 	@Autowired
     private UserRepository userRepository;
@@ -46,6 +50,7 @@ public class UserService implements UserDetailsService {
 	}
 	
 	public User save(User user) {
+	    user.setPassword(passwordEncoder.encode(user.getPassword()));
         return userRepository.save(user);
     }
 }

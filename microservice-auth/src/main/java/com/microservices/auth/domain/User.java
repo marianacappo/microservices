@@ -108,6 +108,9 @@ public class User implements UserDetails {
 		return username;
 	}
 	
+	public void setPassword(final String password) {
+	    this.password = password;
+	}
 	
 	@Override
     public String toString() {

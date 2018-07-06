@@ -7,7 +7,7 @@ import javax.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 import com.microservices.auth.domain.Role;
 import com.microservices.auth.domain.User;
@@ -17,7 +17,7 @@ import com.microservices.auth.repositories.UserRepository;
 public class MicroserviceAuthApplication {
 
     @Autowired
-    private BCryptPasswordEncoder passwordEncoder;
+    private PasswordEncoder passwordEncoder;
     
     @Autowired
     private UserRepository userRepository;
@@ -31,7 +31,7 @@ public class MicroserviceAuthApplication {
         
         User user = new User(
                 "mariana",
-                passwordEncoder.encode("password"),
+                passwordEncoder.encode("sec1"),
                 Arrays.asList(
                         new Role("ROLE_USER"),
                         new Role("ROLE_ADMIN")));

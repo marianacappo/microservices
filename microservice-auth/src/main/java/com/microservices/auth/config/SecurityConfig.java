@@ -1,89 +1,89 @@
 package com.microservices.auth.config;
 
-import javax.annotation.Resource;
-
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
-import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.core.userdetails.UserDetailsService;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.security.oauth2.provider.token.TokenStore;
-import org.springframework.security.oauth2.provider.token.store.InMemoryTokenStore;
-import org.springframework.web.cors.CorsConfiguration;
-import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
-import org.springframework.web.filter.CorsFilter;
+import org.springframework.security.crypto.factory.PasswordEncoderFactories;
+import org.springframework.security.crypto.password.NoOpPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
+
+import com.microservices.auth.service.UserService;
 
 @Configuration
-@EnableWebSecurity
-@EnableGlobalMethodSecurity(prePostEnabled = true)
+@EnableWebSecurity(debug = true)
+@EnableGlobalMethodSecurity(prePostEnabled = true, securedEnabled = true, jsr250Enabled = true)
 public class SecurityConfig extends WebSecurityConfigurerAdapter {
 
-	@Resource(name = "userService")
-    private UserDetailsService userDetailsService;
-	
+	@Autowired
+    private UserService customUserDetailsService;
+		
 	@Override
     @Bean
     public AuthenticationManager authenticationManagerBean() throws Exception {
         return super.authenticationManagerBean();
     }
+
+	/**
+     * Prior to Spring Security 5.0 the default PasswordEncoder was NoOpPasswordEncoder 
+     * which required plain text passwords.
+     * 
+     * Define this Bean for Legacy purpose
+     * https://docs.spring.io/spring-security/site/docs/5.0.0.RELEASE/reference/htmlsingle/#pe-dpe
+     * 
+     * @return PasswordEncoder
+     */
 	
-	@Autowired
-    public void globalUserDetails(AuthenticationManagerBuilder auth) throws Exception {
-        auth.userDetailsService(userDetailsService)
-                .passwordEncoder(passwordEncoder());
+	@Bean
+    public static PasswordEncoder passwordEncoder() {
+          return PasswordEncoderFactories.createDelegatingPasswordEncoder();
+    }
+		
+	@Bean
+    @SuppressWarnings("deprecation")
+    public static NoOpPasswordEncoder pEncoder() {
+        return (NoOpPasswordEncoder) NoOpPasswordEncoder.getInstance();
+    }
+	
+	@Bean
+    public DaoAuthenticationProvider authenticationProvider() {
+         DaoAuthenticationProvider authenticationProvider = new DaoAuthenticationProvider();
+         authenticationProvider.setUserDetailsService(customUserDetailsService);
+         authenticationProvider.setPasswordEncoder(passwordEncoder());
+         return authenticationProvider;
     }
 	
 	@Override
-    protected void configure(HttpSecurity http) throws Exception {
-//		http.headers().frameOptions().disable();
-		http
-        		.csrf().disable()
-        		.anonymous().disable()
-                .authorizeRequests()
-//                .anyRequest().authenticated()
-                .antMatchers("/oauth/token").permitAll()
-//                .and()
-//                	.authorizeRequests().antMatchers("/console/**").permitAll()
-                .and()
-                    .httpBasic()
-                .and()
-                    .sessionManagement()
-                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS);
-        
-                
-                     
+    protected void configure(final AuthenticationManagerBuilder auth) throws Exception {
+       auth
+       .inMemoryAuthentication()
+       .withUser("mariana")
+       .password("{bcrypt}$2a$10$A99HgnwfUMEG5/Cque3NwO3D2jq8ZjhA3diANAgMMTrmXveUiMGoC") //pass: sec1
+       .roles("User");
     }
 	
-	@Bean
-	public TokenStore tokenStore() {
-		return new InMemoryTokenStore();
-	}
-	
-	@Bean
-    public BCryptPasswordEncoder passwordEncoder(){
-        return new BCryptPasswordEncoder();
+	@Override
+    protected void configure(final HttpSecurity http) throws Exception {
+       http
+       .requestMatchers()
+       .antMatchers("/hc")
+       .antMatchers("/users/**")
+       .antMatchers("/oauth/**")
+       .and()
+       .authorizeRequests()
+       .antMatchers("/hc").permitAll()
+       .anyRequest().authenticated()
+       .and()
+       .csrf()
+       .and()
+       .httpBasic().disable()
+       .logout().permitAll();
+
     }
-	
-	@Bean
-	public FilterRegistrationBean<CorsFilter> corsFilter() {
-		UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-		CorsConfiguration config = new CorsConfiguration();
-		config.setAllowCredentials(true);
-        config.addAllowedOrigin("*");
-        config.addAllowedHeader("*");
-        config.addAllowedMethod("*");
-        source.registerCorsConfiguration("/**", config);
-        FilterRegistrationBean<CorsFilter> bean = new FilterRegistrationBean<CorsFilter>(new CorsFilter(source));
-        bean.setOrder(0);
-        return bean;
-	}
 }
